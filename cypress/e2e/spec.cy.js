@@ -1,4 +1,4 @@
-describe('template spec', () => {
+describe('Teste regra de negócio e segurança', () => {
   beforeEach(() => {
     cy.login();
   });
@@ -59,8 +59,6 @@ describe('template spec', () => {
     cy.wait('@postPrescricao').then((interception) => {
       expect(interception.response.statusCode).to.eq(400, 'O sistema não deveria aceitar via incompatível');
     });
-
-    cy.contains('Prescrição realizada com sucesso!').should('be.visible');
   });
 
   it('BUG-06: Bypass de Segurança - Enviando CPF inválido via API', () => {
