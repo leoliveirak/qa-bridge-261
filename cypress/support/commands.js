@@ -23,3 +23,21 @@
 //
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
+
+Cypress.Commands.add('login', () => {
+  const email = Cypress.env('user_email');
+  const password = Cypress.env('user_password');
+
+  cy.visit('/');
+
+  cy.get('#usuario').type(email);
+  cy.get('#password').type(password);
+
+  cy.get('#termos-de-uso').click();
+  cy.get('.btn-acessar').click();
+
+  cy.url().should('include', '/orientacoes');
+  cy.get('.btn-acessar').click();
+
+  cy.url().should('include', '/preescrever/medicamento');
+});
