@@ -63,7 +63,7 @@ describe('template spec', () => {
     cy.contains('Prescrição realizada com sucesso!').should('be.visible');
   });
 
-  it.only('BUG-06: Bypass de Segurança - Enviando CPF inválido via API', () => {
+  it('BUG-06: Bypass de Segurança - Enviando CPF inválido via API', () => {
     cy.request({
       method: 'POST',
       url: '/prescrever',
@@ -78,6 +78,31 @@ describe('template spec', () => {
       }
     }).then((response) => {
       expect(response.status).to.eq(400, 'O servidor não validou o CPF e aceitou letras!');
+    });
+  });
+
+  it('BUG-07: Deve impedir o registro de data de nascimento no futuro (Bypass de Frontend)', () => {
+    cy.intercept('POST', '**/prescrever', (req) => {
+      req.body.dataNascimento = '2099-12-31'; 
+      req.continue();
+    }).as('postPrescricao');
+
+    cy.get('[name="nomeCompleto"]').type('Criança do Futuro');
+    cy.get('[name="cpf"]').type('12345678909');
+    cy.get('[name="dataNascimento"]').type('2000-01-01');
+    
+    cy.get('[name="principioAtivo"]').click();
+    cy.get('.dropdown > :nth-child(1)').click();
+    cy.get('[name="viaAdministracao"]').click();
+    cy.get(':nth-child(2) > .dropdown > :nth-child(1)').click();
+    
+    cy.get('.periodo-container > :nth-child(3)').click();
+
+    // vai trocar '2000-01-01' por '2099-12-31'
+    cy.get('.btn-salvar').click();
+
+    cy.wait('@postPrescricao').then((interception) => {
+      expect(interception.response.statusCode).to.eq(400, 'O Backend aceitou uma data futura (Falha de Segurança)');
     });
   });
 })
