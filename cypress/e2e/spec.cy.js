@@ -62,4 +62,22 @@ describe('template spec', () => {
 
     cy.contains('Prescrição realizada com sucesso!').should('be.visible');
   });
+
+  it.only('BUG-06: Bypass de Segurança - Enviando CPF inválido via API', () => {
+    cy.request({
+      method: 'POST',
+      url: '/prescrever',
+      failOnStatusCode: false,
+      body: {
+        nomeCompleto: "João da Silva",
+        cpf: "123.ABC.789-09",
+        dataNascimento: "1990-01-01",
+        principioAtivo: "Ácido Acetilsalicílico",
+        viaAdministracao: "Capilar",
+        periodoDose: "a cada 6h"
+      }
+    }).then((response) => {
+      expect(response.status).to.eq(400, 'O servidor não validou o CPF e aceitou letras!');
+    });
+  });
 })
