@@ -42,4 +42,24 @@ describe('template spec', () => {
 
     cy.contains('Prescrição realizada com sucesso!').should('be.visible');
   });
+
+  it('BUG-02: Deve impedir prescição de medicamento com via de administração incopatível', () => {
+    cy.intercept('POST', '**/prescrever').as('postPrescricao');
+
+    cy.get('[name="nomeCompleto"]').type('João da Silva');
+    cy.get('[name="cpf"]').type('12345678909');
+    cy.get('[name="dataNascimento"]').type('1990-01-01');
+    cy.get('[name="principioAtivo"]').click();
+    cy.get(':nth-child(1) > .dropdown > :nth-child(1)').click();
+    cy.get('[name="viaAdministracao"]').click();
+    cy.get(':nth-child(2) > .dropdown > :nth-child(3)').click();
+    cy.get('.periodo-container > :nth-child(3)').click();
+    cy.get('.btn-salvar').click();
+
+    cy.wait('@postPrescricao').then((interception) => {
+      expect(interception.response.statusCode).to.eq(400, 'O sistema não deveria aceitar via incompatível');
+    });
+
+    cy.contains('Prescrição realizada com sucesso!').should('be.visible');
+  });
 })
