@@ -103,4 +103,36 @@ describe('Teste regra de negócio e segurança', () => {
       expect(interception.response.statusCode).to.eq(400, 'O Backend aceitou uma data futura (Falha de Segurança)');
     });
   });
+
+  it('Rate Limiting', () => {
+    const payload = {
+      nomeCompleto: "João da Silva Repetitivo",
+      cpf: "123.456.789-09",
+      dataNascimento: "1990-01-01",
+      principioAtivo: "Dipirona",
+      viaAdministracao: "Oral",
+      periodoDose: "a cada 8h"
+    };
+
+    const statusCodes = [];
+
+    for (let i = 0; i < 50; i++) {
+      cy.request({
+        method: 'POST',
+        url: '/prescrever',
+        failOnStatusCode: false,
+        body: payload
+      }).then((response) => {
+        statusCodes.push(response.status);
+        cy.log(`Tentativa ${i + 1}: Recebeu status ${response.status}`);
+      });
+    }
+
+    cy.wrap(statusCodes).should((codes) => {
+      const houveBloqueio = codes.some(status => status !== 201 && status !== 200);
+      expect(houveBloqueio, 
+        `VULNERABILIDADE DETECTADA: O servidor aceitou todas as ${codes.length} requisições repetidas.`
+      ).to.be.true;
+    });
+  });
 })
